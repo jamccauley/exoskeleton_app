@@ -15,25 +15,24 @@ class HomeState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-
+      appBar: AppBar( //menu bar for the app, holds the nav drawer and can also contain text and all that
+        elevation: 0,//elevation zero to eliminate the tacky drop shadow...
       ),
-      drawer: Drawer(
-        child: ListView(
+      drawer: Drawer(//navigation drawer, its the hamburger widget
+        child: ListView(//define a list within the nav drawer
           children: <Widget>[
-            UserAccountsDrawerHeader(
+            UserAccountsDrawerHeader(//user account drawer; header pre-formatted
               accountName: Text("Sample User"),
               accountEmail: Text("sampleuser@mix.wvu.edu"),
-              currentAccountPicture: CircleAvatar(
+              currentAccountPicture: CircleAvatar(//define the user avatar shape
                 backgroundColor: Colors.grey,
-                child: Text(
+                child: Text(//text inside the user avatar
                   "U",
                   style: TextStyle(fontSize: 40),
                 ),
               ),
             ),
-            ListTile(
+            ListTile(//list item, has interactivity and everything else
               title: Text("View Exercises"),
               onTap: () {},
             ),

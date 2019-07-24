@@ -61,7 +61,7 @@ class HomeState extends State<Homepage> {
                       color: Colors.white,
                       padding: EdgeInsets.all(12),
                       child: Text( //defining the text within the button
-                        "Exercise 1",
+                        "Exercise 2",
                         style: TextStyle(fontSize: 32),
                       ),
                       onPressed: () {}, //onpressed for the exercise selection

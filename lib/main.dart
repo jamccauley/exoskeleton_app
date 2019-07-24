@@ -16,10 +16,33 @@ class HomeState extends State<Homepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
 
       ),
       drawer: Drawer(
-
+        child: ListView(
+          children: <Widget>[
+            UserAccountsDrawerHeader(
+              accountName: Text("Sample User"),
+              accountEmail: Text("sampleuser@mix.wvu.edu"),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.grey,
+                child: Text(
+                  "U",
+                  style: TextStyle(fontSize: 40),
+                ),
+              ),
+            ),
+            ListTile(
+              title: Text("View Exercises"),
+              onTap: () {},
+            ),
+            ListTile(
+              title: Text("View Exercise Metrics"),
+              onTap: () {},
+           )
+          ],
+        ),
       ),
       backgroundColor: Colors.blue,
       body: SingleChildScrollView( //define the scrollview, may need to switch to a list view at some point to enable reloading of new exercises

@@ -1,6 +1,9 @@
-
-
 import 'package:flutter/material.dart';
+
+//declarations
+String exercise;
+num listIndex;
+List<String> dbList = ["Elbow Abduction", "Elbow Adduction", "Shoulder Abduction", "Shoulder Adduction", "Elbow Abduction 2", "Shoulder Adduction 2"];
 
 void main() => runApp(MaterialApp(
   home: Homepage()
@@ -47,46 +50,35 @@ class HomeState extends State<Homepage> {
       body: SingleChildScrollView( //define the scrollview, may need to switch to a list view at some point to enable reloading of new exercises
         child: Column( //define the main column
           children: <Widget>[ //not sure why this widget is here, maybe to make all children of the scroll view interactive??
-            Padding( //padding for second row
-              padding: const EdgeInsets.all(12), //using .all ...
-              child: Row( //second row
-                children: <Widget>[ //second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
-                  FlatButton( //using the flat button class, simple interactive text based buttons
-                    textColor: Colors.blue,
-                    color: Colors.white,
-                    padding: EdgeInsets.all(12),
-                    child: Text( //defining the text within the button
-                      "Exercise 1",
-                      style: TextStyle(fontSize: 32),
-                    ),
-                    onPressed: () {}, //onpressed for the exercise selection
-                  )
-                ],
-              )
-            ),
-            Padding( //padding for second row
-              padding: const EdgeInsets.all(12), //using .all ...
-                child: Row( //third row
-                  children: <Widget>[ //second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
-                    FlatButton( //using the flat button class, simple interactive text based buttons
-                      textColor: Colors.blue,
-                      color: Colors.white,
-                      padding: EdgeInsets.all(12),
+            for(exercise in ExerciseGet.exerciseList)//using .all ...
+              Padding( //padding for second row
+                padding: const EdgeInsets.all(12),
+                    child: Row( //second row
+                      children: <Widget>[//second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
 
-                      child: Text( //defining the text within the button
-                        "Exercise 2",
-                        style: TextStyle(fontSize: 32),
-                      ),
-                      onPressed: () {}, //onpressed for the exercise selection
-                    )
-                  ],
-                )
-            )
-          ],
+                        FlatButton( //using the flat button class, simple interactive text based buttons
+                          textColor: Colors.blue,
+                          color: Colors.white,
+                          padding: EdgeInsets.all(12),
+                          child: Text( //defining the text within the button
+                            exercise,
+                          style: TextStyle(fontSize: 32),
+                          ),
+                        onPressed: () {}, //onpressed for the exercise selection
+                      )
+                    ],
+                  )
+                ),
+            ],
         )
       )
     );
   }
+}
+
+
+class ExerciseGet {
+  static List<String> exerciseList = dbList;
 }
 
 

@@ -51,6 +51,23 @@ class HomeState extends State<Homepage> {
                   )
                 ],
               )
+            ),
+            Padding( //padding for second row
+              padding: const EdgeInsets.all(12), //using .all ...
+                child: Row( //second row
+                  children: <Widget>[ //second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
+                    FlatButton( //using the flat button class, simple interactive text based buttons
+                      textColor: Colors.blue,
+                      color: Colors.white,
+                      padding: EdgeInsets.all(12),
+                      child: Text( //defining the text within the button
+                        "Exercise 1",
+                        style: TextStyle(fontSize: 32),
+                      ),
+                      onPressed: () {}, //onpressed for the exercise selection
+                    )
+                  ],
+                )
             )
           ],
         )

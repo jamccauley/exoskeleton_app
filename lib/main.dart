@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 //declarations
 String exercise;
-List<String> dbList = ["Elbow Abduction", "Elbow Adduction", "Shoulder Abduction", "Shoulder Adduction", "Elbow Abduction 2", "Shoulder Adduction 2"];
+String pushedExercise;
+List<String> dbList = ["Elbow Abduction", "Elbow Adduction", "Shoulder Abduction", "Shoulder Adduction", "Elbow Abduction 2"];
 
 void main() => runApp(MaterialApp(
   home: Homepage()
@@ -13,9 +14,12 @@ class Homepage extends StatefulWidget {
   HomeState createState() => new HomeState();
 }
 
-class HomeState extends State<Homepage> {
+class InProgress extends StatefulWidget {
+  @override
+  ExerciseState createState() => new ExerciseState();
+}
 
-ExerciseGet list = new ExerciseGet();
+class HomeState extends State<Homepage> {
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +59,7 @@ ExerciseGet list = new ExerciseGet();
                 child: Column( //define the main column
                   children: <Widget>[
                     //not sure why this widget is here, maybe to make all children of the scroll view interactive??
-                    for(exercise in list.getList()) //using .all ...
+                    for(var i = 0; i < dbList.length; i++) //using .all ...
                       Padding( //padding for second row
                           padding: const EdgeInsets.all(12),
                           child: Row( //second row
@@ -65,11 +69,11 @@ ExerciseGet list = new ExerciseGet();
                                 color: Colors.white,
                                 padding: EdgeInsets.all(12),
                                 child: Text( //defining the text within the button
-                                  exercise,
+                                  dbList[i],
                                   style: TextStyle(fontSize: 32),
                                 ),
-                                onPressed: () {}, //onpressed for the exercise selection
-                              )
+                                onPressed: () => onExerButtonPressed(dbList[i])//onpressed for the exercise selection
+                              ),
                             ],
                           )
                       ),
@@ -79,25 +83,80 @@ ExerciseGet list = new ExerciseGet();
       //  )
     );
   }
+
+  void onExerButtonPressed (String selectedExercise){
+    pushedExercise = selectedExercise;
+    Navigator.push(context,
+      MaterialPageRoute(builder: (context) => InProgress()),);
+  }
+
 }
 
 
-class ExerciseData {
-  List<String> exerciseList;
+class ExerciseState extends State<InProgress> {
 
-  ExerciseData(
-      {this.exerciseList}
-      );
-
-  factory ExerciseData.fromJson(Map<String, dynamic> json){
-    return ExerciseData(
-      exerciseList: json["exerciseList"]
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(left: 10, top: 10),
+              child: Row(
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(Icons.arrow_back),
+                    tooltip: "Back to home screen",
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  Text(
+                      pushedExercise
+                  )
+                ]
+              )
+            ),
+            Padding(
+              padding: const EdgeInsets.only(),
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                      Icons.accessibility_new,
+                      size: 400,
+                    ),
+                ],
+              ),
+           ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: <Widget>[
+                  Column(
+                    children: <Widget>[
+                      FlatButton(
+                        child: Text("Start"),
+                      )
+                    ],
+                  ),
+                  Column(
+                    children: <Widget>[
+                      FlatButton(
+                        child: Text("Stop"),
+                      )
+                    ],
+                  )
+                ],
+              )
+            )
+          ]
+        ),
+      )
     );
   }
+
 }
 
-class ExerciseGet {
-  dataGet()
-}
 
 

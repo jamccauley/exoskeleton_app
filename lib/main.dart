@@ -3,22 +3,48 @@ import 'package:flutter/material.dart';
 //declarations
 String exercise;
 String pushedExercise;
+bool exerciseStarted = false;
+bool exerciseComplete = false;
 List<String> dbList = ["Elbow Abduction", "Elbow Adduction", "Shoulder Abduction", "Shoulder Adduction", "Elbow Abduction 2"];
 
-void main() => runApp(MaterialApp(
-  home: Homepage()
-));
+//main boot screen
+void main() {
+runApp(MaterialApp(
+  title: "Exoskeleton Application",
+  initialRoute: '/',
+  routes: {
+    '/': (context) => Homepage(),
+    '/InProgress': (context) => InProgress(),
+    '/EndEarly': (context) => EndEarly(),
+    '/Metrics': (context) => Metrics()
+    },
+  ));
+}
 
+//home page state reference
 class Homepage extends StatefulWidget {
   @override
   HomeState createState() => new HomeState();
 }
 
+//Exercise in progress state reference
 class InProgress extends StatefulWidget {
   @override
   ExerciseState createState() => new ExerciseState();
 }
 
+//end early warning screen
+class EndEarly extends StatefulWidget {
+  @override
+  ExerciseEndState createState() => new ExerciseEndState();
+}
+
+class Metrics extends StatefulWidget {
+  @override
+  MetricsState createState() => new MetricsState();
+}
+
+//HomeState state definer
 class HomeState extends State<Homepage> {
 
   @override
@@ -47,7 +73,9 @@ class HomeState extends State<Homepage> {
               ),
               ListTile(
                 title: Text("View Exercise Metrics"),
-                onTap: () {},
+                onTap: () {
+                  Navigator.pushNamed(context, '/Metrics');
+                },
               )
             ],
           ),
@@ -86,13 +114,12 @@ class HomeState extends State<Homepage> {
 
   void onExerButtonPressed (String selectedExercise){
     pushedExercise = selectedExercise;
-    Navigator.push(context,
-      MaterialPageRoute(builder: (context) => InProgress()),);
+    Navigator.pushNamed(context, '/InProgress');
   }
 
 }
 
-
+//Exercise in progress state definer
 class ExerciseState extends State<InProgress> {
 
   @override
@@ -136,6 +163,11 @@ class ExerciseState extends State<InProgress> {
                   Column(
                     children: <Widget>[
                       FlatButton(
+                        onPressed: () {
+                          setState(() {
+                            exerciseStarted = true;
+                          });
+                        },
                         child: Text("Start"),
                       )
                     ],
@@ -143,6 +175,7 @@ class ExerciseState extends State<InProgress> {
                   Column(
                     children: <Widget>[
                       FlatButton(
+                        onPressed: exerciseStarted ? stopButton: null,
                         child: Text("Stop"),
                       )
                     ],
@@ -156,7 +189,113 @@ class ExerciseState extends State<InProgress> {
     );
   }
 
+  void stopButton () {
+    if (exerciseComplete == false) {
+      Navigator.pushNamed(context, '/EndEarly');
+    }
+    else {
+      Navigator.pop(context);
+      exerciseComplete = false;
+    }
+  }
+
 }
 
+class ExerciseEndState extends State<EndEarly> {
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(),
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    "You are about to end the exercise early. End?"
+                  )
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(),
+              child: Row(
+                children: <Widget>[
+                  Column(
+                    children: <Widget>[
+                      FlatButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/');
+                          setState(() {
+                            exerciseStarted = false;
+                          });
+                        },
+                        child: Text(
+                          "Yes"
+                        ),
+                      )
+                    ],
+                  ),
+                  Column(
+                    children: <Widget>[
+                      FlatButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          "No"
+                        ),
+                      )
+                    ],
+                  )
+                ],
+              ),
+            )
+          ],
+        )
+    );
+  }
+}
+
+class MetricsState extends State<Metrics> {
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Column(
+          children: <Widget>[
+            Padding(
+              padding: EdgeInsets.only(),
+              child: Row(
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(Icons.arrow_back),
+                    tooltip: "Back to home screen",
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  Text(
+                    "Exercise Metrics"
+                  )
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(),
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.insert_chart,
+                    size: 400,
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+    );
+  }
+}
 

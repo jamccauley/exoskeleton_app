@@ -33,12 +33,13 @@ class InProgress extends StatefulWidget {
   ExerciseState createState() => new ExerciseState();
 }
 
-//end early warning screen
+//end early warning screen state reference
 class EndEarly extends StatefulWidget {
   @override
   ExerciseEndState createState() => new ExerciseEndState();
 }
 
+//Metrics page state reference
 class Metrics extends StatefulWidget {
   @override
   MetricsState createState() => new MetricsState();
@@ -69,7 +70,9 @@ class HomeState extends State<Homepage> {
               ),
               ListTile( //list item, has interactivity and everything else
                 title: Text("View Exercises"),
-                onTap: () {},
+                onTap: () {
+                  Navigator.pushNamed(context, '/');
+                },
               ),
               ListTile(
                 title: Text("View Exercise Metrics"),
@@ -80,7 +83,7 @@ class HomeState extends State<Homepage> {
             ],
           ),
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: Color.fromRGBO(0,40,85, 1.0),
         //body: RefreshIndicator(
             //onRefresh: E.refresh(),
             body: SingleChildScrollView( //define the scrollview, may need to switch to a list view at some point to enable reloading of new exercises
@@ -93,9 +96,9 @@ class HomeState extends State<Homepage> {
                           child: Row( //second row
                             children: <Widget>[ //second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
                               FlatButton( //using the flat button class, simple interactive text based buttons
-                                textColor: Colors.blue,
-                                color: Colors.white,
-                                padding: EdgeInsets.all(12),
+                                textColor: Color.fromRGBO(0,40,85, 1.0),
+                                color: Color.fromRGBO(234, 170, 0, 1.0),
+                                padding: EdgeInsets.fromLTRB(10,10,10,10),
                                 child: Text( //defining the text within the button
                                   dbList[i],
                                   style: TextStyle(fontSize: 32),
@@ -135,9 +138,7 @@ class ExerciseState extends State<InProgress> {
                   IconButton(
                     icon: Icon(Icons.arrow_back),
                     tooltip: "Back to home screen",
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: !exerciseStarted ? backArrow: null,
                   ),
                   Text(
                       pushedExercise
@@ -199,8 +200,13 @@ class ExerciseState extends State<InProgress> {
     }
   }
 
+  void backArrow () {
+   Navigator.pop(context);
 }
 
+}
+
+//exercise end early screen state definer
 class ExerciseEndState extends State<EndEarly> {
 
   @override
@@ -214,7 +220,7 @@ class ExerciseEndState extends State<EndEarly> {
                 children: <Widget>[
                   Text(
                     "You are about to end the exercise early. End?"
-                  )
+                  ),
                 ],
               ),
             ),
@@ -258,6 +264,7 @@ class ExerciseEndState extends State<EndEarly> {
   }
 }
 
+//exercise metrics state definer
 class MetricsState extends State<Metrics> {
 
   @override

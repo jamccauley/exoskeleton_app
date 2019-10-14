@@ -1,4 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_blue/flutter_blue.dart';
+import 'dart:async';
+
+class SizeConfig {
+  static MediaQueryData _mediaQueryData;
+  static double screenWidth;
+  static double screenHeight;
+  static double blockSizeHorizontal;
+  static double blockSizeVertical;
+
+  void init(BuildContext context) {
+    _mediaQueryData = MediaQuery.of(context);
+    screenWidth = _mediaQueryData.size.width;
+    screenHeight = _mediaQueryData.size.height;
+    blockSizeHorizontal = screenWidth / 100;
+    blockSizeVertical = screenHeight / 100;
+  }
+}
 
 //declarations
 String exercise;
@@ -6,6 +25,56 @@ String pushedExercise;
 bool exerciseStarted = false;
 bool exerciseComplete = false;
 List<String> dbList = ["Elbow Abduction", "Elbow Adduction", "Shoulder Abduction", "Shoulder Adduction", "Elbow Abduction 2"];
+BluetoothDevice passedDevice;
+BluetoothSetup blue = new BluetoothSetup();
+
+
+class BluetoothSetup {
+  FlutterBlue bluetooth = FlutterBlue.instance;
+  StreamSubscription scanSubscription;
+  BluetoothDevice _device;
+  List<BluetoothService> services;
+
+  deviceScan() async{
+    scanSubscription = bluetooth.scan().listen((scanResult) {
+      _device = scanResult.device;
+      print(_device.name);
+
+      if (_device.name == 'BlunoMega') {
+        scanSubscription.cancel();
+        connect(_device);
+      }
+    });
+  }
+
+  connect(BluetoothDevice _device) async{
+    scanSubscription.cancel();
+    await _device.connect();
+
+    passedDevice = _device;
+
+    findServices();
+  }
+
+  deviceDisconnect(_device) {
+    _device.disconnect;
+  }
+
+  findServices() async {
+    services = await _device.discoverServices();
+    services.forEach((service){
+      print(service.uuid);
+    });
+    return services;
+  }
+
+  sendData(List<int> data) async{
+    List<BluetoothCharacteristic> c = services[3].characteristics;
+
+    await c[0].write(data);
+  }
+
+}
 
 //main boot screen
 void main() {
@@ -16,7 +85,8 @@ runApp(MaterialApp(
     '/': (context) => Homepage(),
     '/InProgress': (context) => InProgress(),
     '/EndEarly': (context) => EndEarly(),
-    '/Metrics': (context) => Metrics()
+    '/Metrics': (context) => Metrics(),
+    '/Bluetooth': (context) => Bluetooth(),
     },
   ));
 }
@@ -45,11 +115,19 @@ class Metrics extends StatefulWidget {
   MetricsState createState() => new MetricsState();
 }
 
+class Bluetooth extends StatefulWidget {
+  @override
+  BluetoothState createState() => new BluetoothState();
+}
+
 //HomeState state definer
 class HomeState extends State<Homepage> {
 
   @override
   Widget build(BuildContext context) {
+
+    SizeConfig().init(context);
+
     return Scaffold(
         appBar: AppBar( //menu bar for the app, holds the nav drawer and can also contain text and all that
           elevation: 0, //elevation zero to eliminate the tacky drop shadow...
@@ -79,6 +157,12 @@ class HomeState extends State<Homepage> {
                 onTap: () {
                   Navigator.pushNamed(context, '/Metrics');
                 },
+              ),
+              ListTile(
+                title: Text("Bluetooth Settings"),
+                onTap: () {
+                  Navigator.pushNamed(context, '/Bluetooth');
+                },
               )
             ],
           ),
@@ -94,17 +178,20 @@ class HomeState extends State<Homepage> {
                       Padding( //padding for second row
                           padding: const EdgeInsets.all(12),
                           child: Row( //second row
-                            children: <Widget>[ //second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
-                              FlatButton( //using the flat button class, simple interactive text based buttons
+                            children: <Widget>[
+                              Container(//second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
+                                height: SizeConfig.blockSizeVertical*14,
+                                width: SizeConfig.blockSizeHorizontal*94,
+                                child: FlatButton( //using the flat button class, simple interactive text based buttons
                                 textColor: Color.fromRGBO(0,40,85, 1.0),
                                 color: Color.fromRGBO(234, 170, 0, 1.0),
-                                padding: EdgeInsets.fromLTRB(10,10,10,10),
                                 child: Text( //defining the text within the button
                                   dbList[i],
                                   style: TextStyle(fontSize: 32),
                                 ),
                                 onPressed: () => onExerButtonPressed(dbList[i])//onpressed for the exercise selection
                               ),
+                              )
                             ],
                           )
                       ),
@@ -132,7 +219,7 @@ class ExerciseState extends State<InProgress> {
         child: Column(
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.only(left: 10, top: 10),
+              padding: const EdgeInsets.only(left: 10, top: 35),
               child: Row(
                 children: <Widget>[
                   IconButton(
@@ -168,6 +255,12 @@ class ExerciseState extends State<InProgress> {
                           setState(() {
                             exerciseStarted = true;
                           });
+                          if(blue._device != null){
+                            blue.sendData([79,110]);
+                          }
+                          else{
+                            showAlertDialog(context, "Device Error", "Please connect an exoskeleton device before attempting to start an exercise!");
+                          }
                         },
                         child: Text("Start"),
                       )
@@ -195,6 +288,7 @@ class ExerciseState extends State<InProgress> {
       Navigator.pushNamed(context, '/EndEarly');
     }
     else {
+      blue.sendData([79,102,102]);
       Navigator.pop(context);
       exerciseComplete = false;
     }
@@ -232,6 +326,7 @@ class ExerciseEndState extends State<EndEarly> {
                     children: <Widget>[
                       FlatButton(
                         onPressed: () {
+                          blue.sendData([79,102,102]);
                           Navigator.pushNamed(context, '/');
                           setState(() {
                             exerciseStarted = false;
@@ -273,7 +368,7 @@ class MetricsState extends State<Metrics> {
         body: Column(
           children: <Widget>[
             Padding(
-              padding: EdgeInsets.only(),
+              padding: EdgeInsets.only(left: 10, top: 35),
               child: Row(
                 children: <Widget>[
                   IconButton(
@@ -306,3 +401,64 @@ class MetricsState extends State<Metrics> {
   }
 }
 
+class BluetoothState extends State<Bluetooth> {
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.only(left: 10,top: 35),
+            child: Row(
+              children: <Widget>[
+                Text(
+                  'Bluetooth Connection Settings'
+                )
+              ],
+            ),
+          ),
+          Container(//second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
+            height: SizeConfig.blockSizeVertical*14,
+            width: SizeConfig.blockSizeHorizontal*94,
+            child: FlatButton( //using the flat button class, simple interactive text based buttons
+                textColor: Color.fromRGBO(0,40,85, 1.0),
+                color: Color.fromRGBO(234, 170, 0, 1.0),
+                child: Text( //defining the text within the button
+                  'Connect To Arduino',
+                  style: TextStyle(fontSize: 32),
+                ),
+                onPressed: () => blue.deviceScan(),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+showAlertDialog(BuildContext context, String title, String message) {
+
+  // set up the button
+  Widget okButton = FlatButton(
+    child: Text("OK"),
+    onPressed: () { },
+  );
+
+  // set up the AlertDialog
+  AlertDialog alert = AlertDialog(
+    title: Text(title),
+    content: Text(message),
+    actions: [
+      okButton,
+    ],
+  );
+
+  // show the dialog
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
+}

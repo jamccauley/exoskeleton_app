@@ -405,6 +405,9 @@ class BluetoothState extends State<Bluetooth> {
 
   @override
   Widget build(BuildContext context) {
+
+    SizeConfig().init(context);
+
     return Scaffold(
       body: Column(
         children: <Widget>[

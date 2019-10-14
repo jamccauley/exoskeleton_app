@@ -17,7 +17,10 @@ environment:
   sdk: ">=2.3.0 <3.0.0"
 
 dependencies:
+  shared_preferences: ^0.5.3+2
   flutter_blue: ^0.6.2
+  convert: ^2.1.1
+
   flutter:
     sdk: flutter
 

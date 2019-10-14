@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:exoskeleton_app/widget.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 //declarations
 String exercise;
@@ -30,7 +31,6 @@ void main() {
       '/Bluetooth': (context) => FlutterBlueApp(),
       '/Metrics': (context) => Metrics()
     },
-
   ));
 }
 
@@ -51,8 +51,6 @@ class EndEarly extends StatefulWidget {
   @override
   ExerciseEndState createState() => new ExerciseEndState();
 }
-
-
 
 class Metrics extends StatefulWidget {
   @override
@@ -94,13 +92,34 @@ class HomeState extends State<Homepage> {
               ),
               ListTile(
                 title: Text("Connect Device Via Bluetooth"),
-                onTap: () {
+                onTap: () async {
                   Navigator.pushNamed(context, '/Bluetooth');
+
+
                 },
               ),
               ListTile(
                 title: Text("View Exercise Metrics"),
-                onTap: () {
+                onTap: () async{
+                  FlutterBlue flutterBlue = FlutterBlue.instance;
+                  BluetoothDevice dev ;
+
+                  flutterBlue
+                      .scan(
+                    scanMode: ScanMode.lowLatency,
+                    timeout: const Duration(seconds: 12),
+                  )
+                      .listen((scanResult) {
+                    BluetoothDevice device = scanResult.device;
+                    if (scanResult.device.name == "BlunoMega") {
+                      scanResult.device.connect();
+                      dev = scanResult.device;
+                      print('${device.name} found! rssi: ${scanResult.rssi}');
+                    }
+                  });
+
+
+                 
                   Navigator.pushNamed(context, '/Metrics');
                 },
               )
@@ -295,7 +314,6 @@ class ExerciseEndState extends State<EndEarly> {
   }
 }
 
-
 class MetricsState extends State<Metrics> {
   @override
   Widget build(BuildContext context) {
@@ -341,13 +359,16 @@ class MetricsState extends State<Metrics> {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Start of bluetooth code
 
-
 // Copyright 2017, Paul DeMarco.
 // All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-
-
+/*Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+Future<void> _restoreDeviceId(String id) async{
+  final SharedPreferences prefs = await _prefs;
+  String id = device.id.toString();
+  prefs.setString("my device", id);
+}*/
 class FlutterBlueApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -419,26 +440,26 @@ class FindDevicesScreen extends StatelessWidget {
                 builder: (c, snapshot) => Column(
                   children: snapshot.data
                       .map((d) => ListTile(
-                    title: Text(d.name),
-                    subtitle: Text(d.id.toString()),
-                    trailing: StreamBuilder<BluetoothDeviceState>(
-                      stream: d.state,
-                      initialData: BluetoothDeviceState.disconnected,
-                      builder: (c, snapshot) {
-                        if (snapshot.data ==
-                            BluetoothDeviceState.connected) {
-                          return RaisedButton(
-                            child: Text('OPEN'),
-                            onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        DeviceScreen(device: d))),
-                          );
-                        }
-                        return Text(snapshot.data.toString());
-                      },
-                    ),
-                  ))
+                            title: Text(d.name),
+                            subtitle: Text(d.id.toString()),
+                            trailing: StreamBuilder<BluetoothDeviceState>(
+                              stream: d.state,
+                              initialData: BluetoothDeviceState.disconnected,
+                              builder: (c, snapshot) {
+                                if (snapshot.data ==
+                                    BluetoothDeviceState.connected) {
+                                  return RaisedButton(
+                                    child: Text('OPEN'),
+                                    onPressed: () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                DeviceScreen(device: d))),
+                                  );
+                                }
+                                return Text(snapshot.data.toString());
+                              },
+                            ),
+                          ))
                       .toList(),
                 ),
               ),
@@ -449,14 +470,15 @@ class FindDevicesScreen extends StatelessWidget {
                   children: snapshot.data
                       .map(
                         (r) => ScanResultTile(
-                      result: r,
-                      onTap: () => Navigator.of(context)
-                          .push(MaterialPageRoute(builder: (context) {
-                        r.device.connect();
-                        return DeviceScreen(device: r.device);
-                      })),
-                    ),
-                  )
+                          result: r,
+                          onTap: () => Navigator.of(context)
+                              .push(MaterialPageRoute(builder: (context) {
+                            r.device.connect();
+
+                            return DeviceScreen(device: r.device);
+                          })),
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -488,36 +510,35 @@ class FindDevicesScreen extends StatelessWidget {
 
 class DeviceScreen extends StatelessWidget {
   const DeviceScreen({Key key, this.device}) : super(key: key);
-
   final BluetoothDevice device;
 
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
     return services
         .map(
           (s) => ServiceTile(
-        service: s,
-        characteristicTiles: s.characteristics
-            .map(
-              (c) => CharacteristicTile(
-            characteristic: c,
-            onReadPressed: () => c.read(),
-            onWritePressed: () => c.write([13, 24]),
-            onNotificationPressed: () =>
-                c.setNotifyValue(!c.isNotifying),
-            descriptorTiles: c.descriptors
+            service: s,
+            characteristicTiles: s.characteristics
                 .map(
-                  (d) => DescriptorTile(
-                descriptor: d,
-                onReadPressed: () => d.read(),
-                onWritePressed: () => d.write([11, 12]),
-              ),
-            )
+                  (c) => CharacteristicTile(
+                    characteristic: c,
+                    onReadPressed: () => c.read(),
+                    onWritePressed: () => c.write([13, 24]),
+                    onNotificationPressed: () =>
+                        c.setNotifyValue(!c.isNotifying),
+                    descriptorTiles: c.descriptors
+                        .map(
+                          (d) => DescriptorTile(
+                            descriptor: d,
+                            onReadPressed: () => d.read(),
+                            onWritePressed: () => d.write([11, 12]),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                )
                 .toList(),
           ),
         )
-            .toList(),
-      ),
-    )
         .toList();
   }
 
@@ -533,6 +554,7 @@ class DeviceScreen extends StatelessWidget {
             builder: (c, snapshot) {
               VoidCallback onPressed;
               String text;
+              //Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
               switch (snapshot.data) {
                 case BluetoothDeviceState.connected:
                   onPressed = () => device.disconnect();
@@ -541,6 +563,7 @@ class DeviceScreen extends StatelessWidget {
                 case BluetoothDeviceState.disconnected:
                   onPressed = () => device.connect();
                   text = 'CONNECT';
+
                   break;
                 default:
                   onPressed = null;

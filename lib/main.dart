@@ -49,6 +49,7 @@ class BluetoothSetup {
 
   connect(BluetoothDevice _device) async{
     scanSubscription.cancel();
+
     await _device.connect();
 
     passedDevice = _device;
@@ -215,6 +216,7 @@ class ExerciseState extends State<InProgress> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: Color.fromRGBO(0,40,85, 1.0),
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
@@ -228,7 +230,8 @@ class ExerciseState extends State<InProgress> {
                     onPressed: !exerciseStarted ? backArrow: null,
                   ),
                   Text(
-                      pushedExercise
+                      pushedExercise,
+                    style: TextStyle(fontSize: 40,color: Colors.yellow),
                   )
                 ]
               )
@@ -240,6 +243,7 @@ class ExerciseState extends State<InProgress> {
                   Icon(
                       Icons.accessibility_new,
                       size: 400,
+                    color: Colors.yellow,
                     ),
                 ],
               ),
@@ -252,17 +256,18 @@ class ExerciseState extends State<InProgress> {
                     children: <Widget>[
                       FlatButton(
                         onPressed: () {
-                          setState(() {
-                            exerciseStarted = true;
-                          });
                           if(blue._device != null){
+                            setState(() {
+                              exerciseStarted = true;
+                            });
                             blue.sendData([79,110]);
                           }
                           else{
                             showAlertDialog(context, "Device Error", "Please connect an exoskeleton device before attempting to start an exercise!");
                           }
                         },
-                        child: Text("Start"),
+                        child: Text("Start",style: t,),
+
                       )
                     ],
                   ),
@@ -309,7 +314,7 @@ class ExerciseEndState extends State<EndEarly> {
       body: Column(
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.only(),
+              padding: const EdgeInsets.only(top: 35, left: 10),
               child: Row(
                 children: <Widget>[
                   Text(

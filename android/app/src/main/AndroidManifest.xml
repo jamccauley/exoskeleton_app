@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.exoskeleton_app" xmlns:tools="http://schemas.android.com/tools">
+    package="com.example.exoskeleton_app">
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 
     <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.
@@ -11,6 +13,7 @@
         android:label="exoskeleton_app"
         android:icon="@mipmap/ic_launcher">
         <activity
+            android:screenOrientation="portrait"
             android:name=".MainActivity"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
@@ -30,5 +33,8 @@
             </intent-filter>
         </activity>
     </application>
-    <uses-sdk tools:overrideLibrary="com.pauldemarco.flutterblue"/>
+
 </manifest>
+
+
+

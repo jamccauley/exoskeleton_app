@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.exoskeleton_app">
+    package="com.example.exoskeleton_app" xmlns:tools="http://schemas.android.com/tools">
 
     <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.
@@ -30,4 +30,5 @@
             </intent-filter>
         </activity>
     </application>
+    <uses-sdk tools:overrideLibrary="com.pauldemarco.flutterblue"/>
 </manifest>

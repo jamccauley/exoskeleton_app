@@ -263,10 +263,10 @@ class ExerciseState extends State<InProgress> {
                             blue.sendData([79,110]);
                           }
                           else{
-                            showAlertDialog(context, "Device Error", "Please connect an exoskeleton device before attempting to start an exercise!");
+                            showAlertDialog(context, "Device Error", "Please consnect an exoskeleton device before attempting to start an exercise!");
                           }
                         },
-                        child: Text("Start",style: t,),
+                        child: Text("Start",style: ,),
 
                       )
                     ],

@@ -24,10 +24,15 @@ String exercise;
 String pushedExercise;
 bool exerciseStarted = false;
 bool exerciseComplete = false;
-List<String> dbList = ["Elbow Abduction", "Elbow Adduction", "Shoulder Abduction", "Shoulder Adduction", "Elbow Abduction 2"];
+List<String> dbList = [
+  "Elbow Abduction",
+  "Elbow Adduction",
+  "Shoulder Abduction",
+  "Shoulder Adduction",
+  "Elbow Abduction 2"
+];
 BluetoothDevice passedDevice;
 BluetoothSetup blue = new BluetoothSetup();
-
 
 class BluetoothSetup {
   FlutterBlue bluetooth = FlutterBlue.instance;
@@ -46,7 +51,6 @@ class BluetoothSetup {
       }
     });
   }
-
   connect(BluetoothDevice _device) async{
     scanSubscription.cancel();
 
@@ -75,19 +79,26 @@ class BluetoothSetup {
     await c[0].write(data);
   }
 
+  recieveData() async{
+    List<BluetoothCharacteristic> c = services[3].characteristics;
+
+    return await c[0].read();
+  }
+
+
 }
 
 //main boot screen
 void main() {
-runApp(MaterialApp(
-  title: "Exoskeleton Application",
-  initialRoute: '/',
-  routes: {
-    '/': (context) => Homepage(),
-    '/InProgress': (context) => InProgress(),
-    '/EndEarly': (context) => EndEarly(),
-    '/Metrics': (context) => Metrics(),
-    '/Bluetooth': (context) => Bluetooth(),
+  runApp(MaterialApp(
+    title: "Exoskeleton Application",
+    initialRoute: '/',
+    routes: {
+      '/': (context) => Homepage(),
+      '/InProgress': (context) => InProgress(),
+      '/EndEarly': (context) => EndEarly(),
+      '/Metrics': (context) => Metrics(),
+      '/Bluetooth': (context) => Bluetooth(),
     },
   ));
 }
@@ -104,13 +115,12 @@ class InProgress extends StatefulWidget {
   ExerciseState createState() => new ExerciseState();
 }
 
-//end early warning screen state reference
+//end early warning screen
 class EndEarly extends StatefulWidget {
   @override
   ExerciseEndState createState() => new ExerciseEndState();
 }
 
-//Metrics page state reference
 class Metrics extends StatefulWidget {
   @override
   MetricsState createState() => new MetricsState();
@@ -123,39 +133,43 @@ class Bluetooth extends StatefulWidget {
 
 //HomeState state definer
 class HomeState extends State<Homepage> {
-
   @override
   Widget build(BuildContext context) {
-
-    SizeConfig().init(context);
-
     return Scaffold(
-        appBar: AppBar( //menu bar for the app, holds the nav drawer and can also contain text and all that
+        appBar: AppBar(
+          //menu bar for the app, holds the nav drawer and can also contain text and all that
           elevation: 0, //elevation zero to eliminate the tacky drop shadow...
         ),
-        drawer: Drawer( //navigation drawer, its the hamburger widget
-          child: ListView( //define a list within the nav drawer
+        drawer: Drawer(
+          //navigation drawer, its the hamburger widget
+          child: ListView(
+            //define a list within the nav drawer
             children: <Widget>[
-              UserAccountsDrawerHeader( //user account drawer; header pre-formatted
+              UserAccountsDrawerHeader(
+                //user account drawer; header pre-formatted
                 accountName: Text("Sample User"),
                 accountEmail: Text("sampleuser@mix.wvu.edu"),
-                currentAccountPicture: CircleAvatar( //define the user avatar shape
+                currentAccountPicture: CircleAvatar(
+                  //define the user avatar shape
                   backgroundColor: Colors.grey,
-                  child: Text( //text inside the user avatar
+                  child: Text(
+                    //text inside the user avatar
                     "U",
                     style: TextStyle(fontSize: 40),
                   ),
                 ),
               ),
-              ListTile( //list item, has interactivity and everything else
+              ListTile(
+                //list item, has interactivity and everything else
                 title: Text("View Exercises"),
                 onTap: () {
                   Navigator.pushNamed(context, '/');
                 },
               ),
+
               ListTile(
                 title: Text("View Exercise Metrics"),
-                onTap: () {
+                onTap: () async {
                   Navigator.pushNamed(context, '/Metrics');
                 },
               ),
@@ -168,62 +182,62 @@ class HomeState extends State<Homepage> {
             ],
           ),
         ),
-        backgroundColor: Color.fromRGBO(0,40,85, 1.0),
+        backgroundColor: Colors.blue,
         //body: RefreshIndicator(
-            //onRefresh: E.refresh(),
-            body: SingleChildScrollView( //define the scrollview, may need to switch to a list view at some point to enable reloading of new exercises
-                child: Column( //define the main column
-                  children: <Widget>[
-                    //not sure why this widget is here, maybe to make all children of the scroll view interactive??
-                    for(var i = 0; i < dbList.length; i++) //using .all ...
-                      Padding( //padding for second row
-                          padding: const EdgeInsets.all(12),
-                          child: Row( //second row
-                            children: <Widget>[
-                              Container(//second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
-                                height: SizeConfig.blockSizeVertical*14,
-                                width: SizeConfig.blockSizeHorizontal*94,
-                                child: FlatButton( //using the flat button class, simple interactive text based buttons
-                                textColor: Color.fromRGBO(0,40,85, 1.0),
-                                color: Color.fromRGBO(234, 170, 0, 1.0),
-                                child: Text( //defining the text within the button
-                                  dbList[i],
-                                  style: TextStyle(fontSize: 32),
-                                ),
-                                onPressed: () => onExerButtonPressed(dbList[i])//onpressed for the exercise selection
-                              ),
-                              )
-                            ],
-                          )
-                      ),
-                  ],
-                )
-            )
-      //  )
-    );
+        //onRefresh: E.refresh(),
+        body: SingleChildScrollView(
+            //define the scrollview, may need to switch to a list view at some point to enable reloading of new exercises
+            child: Column(
+          //define the main column
+          children: <Widget>[
+            //not sure why this widget is here, maybe to make all children of the scroll view interactive??
+            for (var i = 0; i < dbList.length; i++) //using .all ...
+              Padding(
+                  //padding for second row
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    //second row
+                    children: <Widget>[
+                      //second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
+                      FlatButton(
+                          //using the flat button class, simple interactive text based buttons
+                          textColor: Colors.blue,
+                          color: Colors.white,
+                          padding: EdgeInsets.all(12),
+                          child: Text(
+                            //defining the text within the button
+                            dbList[i],
+                            style: TextStyle(fontSize: 32),
+                          ),
+                          onPressed: () => onExerButtonPressed(
+                              dbList[i]) //onpressed for the exercise selection
+                          ),
+                    ],
+                  )),
+          ],
+        ))
+        //  )
+        );
   }
 
-  void onExerButtonPressed (String selectedExercise){
+  void onExerButtonPressed(String selectedExercise) {
     pushedExercise = selectedExercise;
     Navigator.pushNamed(context, '/InProgress');
   }
-
 }
 
 //Exercise in progress state definer
 class ExerciseState extends State<InProgress> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Color.fromRGBO(0,40,85, 1.0),
-      body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
+        backgroundColor: Colors.lightBlueAccent,
+        body: SingleChildScrollView(
+          child: Column(children: <Widget>[
             Padding(
-              padding: const EdgeInsets.only(left: 10, top: 35),
-              child: Row(
-                children: <Widget>[
+                padding: const EdgeInsets.only(left: 10, top: 10),
+                child: Row(
+                    children: <Widget>[
                   IconButton(
                     icon: Icon(Icons.arrow_back),
                     tooltip: "Back to home screen",
@@ -231,177 +245,187 @@ class ExerciseState extends State<InProgress> {
                   ),
                   Text(
                       pushedExercise,
-                    style: TextStyle(fontSize: 40,color: Colors.yellow),
-                  )
+                      style: TextStyle(fontSize: 40,color: Colors.yellow)
+                  ),
                 ]
-              )
+                )
             ),
             Padding(
               padding: const EdgeInsets.only(),
               child: Row(
                 children: <Widget>[
                   Icon(
-                      Icons.accessibility_new,
-                      size: 400,
+                    Icons.accessibility_new,
+                    size: 400,
                     color: Colors.yellow,
-                    ),
+                  ),
                 ],
               ),
-           ),
+            ),
+            Divider(
+              color: Colors.white,
+            ),
             Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: <Widget>[
-                  Column(
-                    children: <Widget>[
-                      FlatButton(
-                        onPressed: () {
-                          if(blue._device != null){
-                            setState(() {
-                              exerciseStarted = true;
-                            });
-                            blue.sendData([79,110]);
-                          }
-                          else{
-                            showAlertDialog(context, "Device Error", "Please consnect an exoskeleton device before attempting to start an exercise!");
-                          }
-                        },
-                        child: Text("Start",style: ,),
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Column(
+                      children: <Widget>[
+                        FlatButton(
+                          onPressed: () {
+                            if(blue._device != null){
+                              setState(() {
+                                exerciseStarted = true;
+                              });
+                              blue.sendData([79,110]);
+                              //Text(); //test
+                              _showDialog(context,blue.recieveData());
+                              showAlertDialog(context,"TEST",blue.recieveData());
+                            }
+                            else{
+                              showAlertDialog(context, "Device Error", "Please connect an exoskeleton device before attempting to start an exercise!");
+                            }
+                          },
+                          child: Text("Start", style: TextStyle(color: Colors.white, fontSize: 25),
 
-                      )
-                    ],
-                  ),
-                  Column(
-                    children: <Widget>[
-                      FlatButton(
-                        onPressed: exerciseStarted ? stopButton: null,
-                        child: Text("Stop"),
-                      )
-                    ],
-                  )
-                ],
-              )
-            )
-          ]
-        ),
-      )
-    );
+                        ),
+                        )
+                      ],
+                    ),
+                    Column(
+                      children: <Widget>[
+                        FlatButton(
+                          onPressed: exerciseStarted ? stopButton : null,
+                          child: Text(
+                            "Stop",
+                            style: TextStyle(color: Colors.white, fontSize: 25),
+                          ),
+                        )
+                      ],
+                    )
+                  ],
+                ))
+          ]),
+        ));
   }
 
-  void stopButton () {
+  void stopButton() {
     if (exerciseComplete == false) {
       Navigator.pushNamed(context, '/EndEarly');
-    }
-    else {
+    } else {
       blue.sendData([79,102,102]);
       Navigator.pop(context);
       exerciseComplete = false;
     }
   }
-
   void backArrow () {
-   Navigator.pop(context);
+    Navigator.pop(context);
+  }
 }
 
-}
-
-//exercise end early screen state definer
 class ExerciseEndState extends State<EndEarly> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.lightBlueAccent,
       body: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(top: 35, left: 10),
-              child: Row(
-                children: <Widget>[
-                  Text(
-                    "You are about to end the exercise early. End?"
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    "You are about to end the exercise early. End?",
+                    style: TextStyle(fontSize: 40, color: Colors.white),
+                    textAlign: TextAlign.left,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(),
-              child: Row(
-                children: <Widget>[
-                  Column(
-                    children: <Widget>[
-                      FlatButton(
-                        onPressed: () {
-                          blue.sendData([79,102,102]);
-                          Navigator.pushNamed(context, '/');
-                          setState(() {
-                            exerciseStarted = false;
-                          });
-                        },
-                        child: Text(
-                          "Yes"
-                        ),
-                      )
-                    ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.all(10.0),
+                child: FlatButton(
+                  onPressed: () {
+                    blue.sendData([79,102,102]);
+                    Navigator.pushNamed(context, '/');
+                    setState(() {
+                      exerciseStarted = false;
+                    });
+                  },
+                  child: Text(
+                    "Yes",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 35, color: Colors.greenAccent),
                   ),
-                  Column(
-                    children: <Widget>[
-                      FlatButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          "No"
-                        ),
-                      )
-                    ],
-                  )
-                ],
+                ),
               ),
-            )
-          ],
-        )
+              Padding(
+                padding: EdgeInsets.all(10.0),
+                child: FlatButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    "No",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 35, color: Colors.redAccent),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
 
-//exercise metrics state definer
 class MetricsState extends State<Metrics> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Column(
-          children: <Widget>[
-            Padding(
-              padding: EdgeInsets.only(left: 10, top: 35),
-              child: Row(
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.arrow_back),
-                    tooltip: "Back to home screen",
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  Text(
-                    "Exercise Metrics"
-                  )
-                ],
-              ),
+      backgroundColor: Colors.lightBlueAccent,
+      body: Column(
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.only(),
+            child: Row(
+              children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  tooltip: "Back to home screen",
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                Text("Exercise Metrics")
+              ],
             ),
-            Padding(
-              padding: EdgeInsets.only(),
-              child: Row(
-                children: <Widget>[
-                  Icon(
-                    Icons.insert_chart,
-                    size: 400,
-                  )
-                ],
-              ),
-            )
-          ],
-        ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  Icons.insert_chart,
+                  size: 400,
+                )
+              ],
+            ),
+          ),
+          Divider(
+            color: Colors.white,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -421,7 +445,7 @@ class BluetoothState extends State<Bluetooth> {
             child: Row(
               children: <Widget>[
                 Text(
-                  'Bluetooth Connection Settings'
+                    'Bluetooth Connection Settings'
                 )
               ],
             ),
@@ -430,13 +454,13 @@ class BluetoothState extends State<Bluetooth> {
             height: SizeConfig.blockSizeVertical*14,
             width: SizeConfig.blockSizeHorizontal*94,
             child: FlatButton( //using the flat button class, simple interactive text based buttons
-                textColor: Color.fromRGBO(0,40,85, 1.0),
-                color: Color.fromRGBO(234, 170, 0, 1.0),
-                child: Text( //defining the text within the button
-                  'Connect To Arduino',
-                  style: TextStyle(fontSize: 32),
-                ),
-                onPressed: () => blue.deviceScan(),
+              textColor: Color.fromRGBO(0,40,85, 1.0),
+              color: Color.fromRGBO(234, 170, 0, 1.0),
+              child: Text( //defining the text within the button
+                'Connect To Arduino',
+                style: TextStyle(fontSize: 32),
+              ),
+              onPressed: () => blue.deviceScan(),
             ),
           )
         ],
@@ -467,6 +491,28 @@ showAlertDialog(BuildContext context, String title, String message) {
     context: context,
     builder: (BuildContext context) {
       return alert;
+    },
+  );
+}
+void _showDialog(BuildContext context, String Message) {
+  // flutter defined function
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      // return object of type Dialog
+      return AlertDialog(
+        title: new Text("Alert Dialog title"),
+        content: new Text(Message),
+        actions: <Widget>[
+          // usually buttons at the bottom of the dialog
+          new FlatButton(
+            child: new Text("Close"),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
     },
   );
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:charts_flutter/flutter.dart' as charts;
 
 class SizeConfig {
   static MediaQueryData _mediaQueryData;
@@ -33,59 +35,100 @@ List<String> dbList = [
 ];
 BluetoothDevice passedDevice;
 BluetoothSetup blue = new BluetoothSetup();
+List<int> receivedFlexValues = [];
+int repCounter = 0;
+List<FlexData> flexData = [];
+int i = 0;
+bool lastMessage = false;
 
 class BluetoothSetup {
   FlutterBlue bluetooth = FlutterBlue.instance;
   StreamSubscription scanSubscription;
   BluetoothDevice _device;
   List<BluetoothService> services;
+  bool deviceConnected = false;
+  var message;
+  BluetoothCharacteristic serialPort;
 
   deviceScan() async{
+    scanSubscription = null;
     scanSubscription = bluetooth.scan().listen((scanResult) {
       _device = scanResult.device;
       print(_device.name);
 
-      if (_device.name == 'BlunoMega') {
-        scanSubscription.cancel();
+      if (_device.name == 'BlunoMega'){
         connect(_device);
       }
     });
   }
+
   connect(BluetoothDevice _device) async{
-    scanSubscription.cancel();
+    blue.scanSubscription.cancel();
 
     await _device.connect();
 
     passedDevice = _device;
+    deviceConnected = true;
 
     findServices();
   }
 
   deviceDisconnect(_device) {
-    _device.disconnect;
+    _device.disconnect();
+  }
+
+  stopScan() {
+    scanSubscription.cancel();
   }
 
   findServices() async {
     services = await _device.discoverServices();
     services.forEach((service){
-      print(service.uuid);
+      //print(service.uuid);
     });
+    List<BluetoothCharacteristic> c = services[3].characteristics;
+    List<BluetoothDescriptor> d = c[0].descriptors;
+
+    d.forEach((descriptor){
+      print(descriptor.uuid);
+    });
+
     return services;
   }
 
-  sendData(List<int> data) async{
+  sendData(List<int> data,BuildContext context) async{
     List<BluetoothCharacteristic> c = services[3].characteristics;
 
-    await c[0].write(data);
+    serialPort = c[0];
+
+    await serialPort.write(data);
+
+    await serialPort.setNotifyValue(true);
+
+    serialPort.value.listen((value) {
+        //print(value);
+      if(repCounter <= 4) {
+        List<int> serialData = value;
+        serialHandler(serialData);
+      }
+      else{
+        exerciseComplete = true;
+        exerciseStarted = false;
+        endListen();
+        repCounter = 0;
+        i = 0;
+        Navigator.pushNamed(context, '/Metrics');
+      }
+    });
   }
 
-  recieveData() async{
-    List<BluetoothCharacteristic> c = services[3].characteristics;
-
-    return await c[0].read();
+  List<int> getReceivedData() {
+    return message;
   }
 
-
+  endListen() async {
+    await serialPort.setNotifyValue(false);
+  }
 }
 
 //main boot screen
@@ -133,8 +176,12 @@ class Bluetooth extends StatefulWidget {
 
 //HomeState state definer
 class HomeState extends State<Homepage> {
+
   @override
   Widget build(BuildContext context) {
+
+    SizeConfig().init(context);
+
     return Scaffold(
         appBar: AppBar(
           //menu bar for the app, holds the nav drawer and can also contain text and all that
@@ -182,7 +229,7 @@ class HomeState extends State<Homepage> {
             ],
           ),
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.lightBlueAccent,
         //body: RefreshIndicator(
         //onRefresh: E.refresh(),
         body: SingleChildScrollView(
@@ -198,8 +245,11 @@ class HomeState extends State<Homepage> {
                   child: Row(
                     //second row
                     children: <Widget>[
+                      Container(//second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
+                        height: SizeConfig.blockSizeVertical*14,
+                        width: SizeConfig.blockSizeHorizontal*94,
                       //second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
-                      FlatButton(
+                        child: FlatButton(
                           //using the flat button class, simple interactive text based buttons
                           textColor: Colors.blue,
                           color: Colors.white,
@@ -212,6 +262,7 @@ class HomeState extends State<Homepage> {
                           onPressed: () => onExerButtonPressed(
                               dbList[i]) //onpressed for the exercise selection
                           ),
+                      )
                     ],
                   )),
           ],
@@ -230,23 +281,31 @@ class HomeState extends State<Homepage> {
 class ExerciseState extends State<InProgress> {
   @override
   Widget build(BuildContext context) {
+    repCounter = 0;
+    i = 0;
+
     return Scaffold(
         backgroundColor: Colors.lightBlueAccent,
         body: SingleChildScrollView(
           child: Column(children: <Widget>[
             Padding(
-                padding: const EdgeInsets.only(left: 10, top: 10),
+                padding: const EdgeInsets.only(left: 10, top: 40),
                 child: Row(
                     children: <Widget>[
                   IconButton(
                     icon: Icon(Icons.arrow_back),
                     tooltip: "Back to home screen",
                     onPressed: !exerciseStarted ? backArrow: null,
+                    color: Colors.white,
+                    iconSize: 40,
                   ),
-                  Text(
+                  Padding(
+                    padding: EdgeInsets.only(left: 12),
+                  child: Text(
                       pushedExercise,
-                      style: TextStyle(fontSize: 40,color: Colors.yellow)
-                  ),
+                      style: TextStyle(fontSize: 30,color: Colors.white)
+                  )
+                  )
                 ]
                 )
             ),
@@ -278,10 +337,12 @@ class ExerciseState extends State<InProgress> {
                               setState(() {
                                 exerciseStarted = true;
                               });
-                              blue.sendData([79,110]);
-                              //Text(); //test
-                              _showDialog(context,blue.recieveData());
-                              showAlertDialog(context,"TEST",blue.recieveData());
+                              if(pushedExercise.contains("Elbow")) {
+                                blue.sendData([101, 108, 98],context);
+                              }
+                              else{
+                                blue.sendData([115,104,111],context);
+                              }
                             }
                             else{
                               showAlertDialog(context, "Device Error", "Please connect an exoskeleton device before attempting to start an exercise!");
@@ -305,7 +366,10 @@ class ExerciseState extends State<InProgress> {
                       ],
                     )
                   ],
-                ))
+                )),
+            Divider(
+              color: Colors.white,
+            ),
           ]),
         ));
   }
@@ -314,7 +378,7 @@ class ExerciseState extends State<InProgress> {
     if (exerciseComplete == false) {
       Navigator.pushNamed(context, '/EndEarly');
     } else {
-      blue.sendData([79,102,102]);
+      //blue.sendData([115,116,111,112]);
       Navigator.pop(context);
       exerciseComplete = false;
     }
@@ -352,31 +416,41 @@ class ExerciseEndState extends State<EndEarly> {
             children: <Widget>[
               Padding(
                 padding: EdgeInsets.all(10.0),
-                child: FlatButton(
-                  onPressed: () {
-                    blue.sendData([79,102,102]);
-                    Navigator.pushNamed(context, '/');
-                    setState(() {
-                      exerciseStarted = false;
-                    });
-                  },
-                  child: Text(
-                    "Yes",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 35, color: Colors.greenAccent),
+                child: Container(
+                  color: Colors.white,
+                  child: FlatButton(
+                    onPressed: () {
+                      blue.sendData([115,116,111,112],context);
+                      blue.endListen();
+                      repCounter = 0;
+                      i = 0;
+                      Navigator.pushNamed(context, '/Metrics');
+                      setState(() {
+                        exerciseComplete = true;
+                        exerciseStarted = false;
+                      });
+                    },
+                    child: Text(
+                      "Yes",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 35, color: Colors.greenAccent),
+                    ),
                   ),
                 ),
               ),
               Padding(
                 padding: EdgeInsets.all(10.0),
-                child: FlatButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    "No",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 35, color: Colors.redAccent),
+                child: Container(
+                  color: Colors.white,
+                  child: FlatButton(
+                      onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      "No",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 35, color: Colors.redAccent),
+                    ),
                   ),
                 ),
               ),
@@ -389,36 +463,58 @@ class ExerciseEndState extends State<EndEarly> {
 }
 
 class MetricsState extends State<Metrics> {
+
   @override
+  static var data = flexData;
+
+  static var series = [
+    new charts.Series(
+      domainFn: (FlexData chartData, _) => chartData.index,
+      measureFn: (FlexData chartData, _) => chartData.flex,
+      id: 'Flex Value',
+      data: data,
+    ),
+  ];
+
+  static var chart = new charts.LineChart(
+    series,
+    animate: false,
+  );
+
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.lightBlueAccent,
       body: Column(
         children: <Widget>[
           Padding(
-            padding: EdgeInsets.only(),
+            padding: EdgeInsets.only(left: 12, top: 50),
             child: Row(
               children: <Widget>[
                 IconButton(
                   icon: Icon(Icons.arrow_back),
                   tooltip: "Back to home screen",
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.pushNamed(context,'/');
+                    flexData = [];
+                    receivedFlexValues = [];
                   },
+                  color: Colors.white,
+                  iconSize: 40,
                 ),
-                Text("Exercise Metrics")
+                Text(
+                  "Exercise Metrics",
+                  style: TextStyle(fontSize: 28,color: Colors.white),
+                )
               ],
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(),
-            child: Row(
-              children: <Widget>[
-                Icon(
-                  Icons.insert_chart,
-                  size: 400,
-                )
-              ],
+            padding: EdgeInsets.all(12),
+            child: Container(
+              height: 400.0,
+              width: 400.0,
+              child: chart,
             ),
           ),
           Divider(
@@ -438,34 +534,75 @@ class BluetoothState extends State<Bluetooth> {
     SizeConfig().init(context);
 
     return Scaffold(
+      backgroundColor: Colors.lightBlueAccent,
       body: Column(
         children: <Widget>[
           Padding(
-            padding: EdgeInsets.only(left: 10,top: 35),
+            padding: EdgeInsets.only(left: 10,top: 50),
             child: Row(
               children: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  tooltip: "Back to home screen",
+                  onPressed: () {
+                    backArrow();
+                  },
+                  color: Colors.white,
+                ),
                 Text(
-                    'Bluetooth Connection Settings'
+                    'Bluetooth Connection Settings',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
                 )
               ],
             ),
           ),
-          Container(//second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
+          Padding(
+            padding: EdgeInsets.all(12),
+          child: Container(//second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
             height: SizeConfig.blockSizeVertical*14,
             width: SizeConfig.blockSizeHorizontal*94,
             child: FlatButton( //using the flat button class, simple interactive text based buttons
-              textColor: Color.fromRGBO(0,40,85, 1.0),
-              color: Color.fromRGBO(234, 170, 0, 1.0),
+              textColor: Colors.lightBlueAccent,
+              color: Colors.white,
               child: Text( //defining the text within the button
                 'Connect To Arduino',
-                style: TextStyle(fontSize: 32),
+                style: TextStyle(fontSize: 31),
               ),
-              onPressed: () => blue.deviceScan(),
+              onPressed: () {
+                blue.deviceScan();
+                setState(() {
+                  blue.deviceConnected;
+                });
+              }
             ),
-          )
+          ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(12),
+            child: Container(//second (& third & fourth, ad nauseam) item will be exercise selection buttons, not sure if these are static or if we can update the list at will
+              height: SizeConfig.blockSizeVertical*14,
+              width: SizeConfig.blockSizeHorizontal*94,
+              child: FlatButton( //using the flat button class, simple interactive text based buttons
+                textColor: Colors.lightBlueAccent,
+                color: Colors.white,
+                child: Text( //defining the text within the button
+                  'Disconnect From Arduino',
+                  style: TextStyle(fontSize: 31),
+                ),
+                onPressed: () => blue.deviceDisconnect(blue._device)
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  backArrow() {
+    if(blue.scanSubscription != null){
+      blue.stopScan();
+    }
+    Navigator.pop(context);
   }
 }
 
@@ -474,7 +611,9 @@ showAlertDialog(BuildContext context, String title, String message) {
   // set up the button
   Widget okButton = FlatButton(
     child: Text("OK"),
-    onPressed: () { },
+    onPressed: () { 
+      Navigator.pop(context);
+    },
   );
 
   // set up the AlertDialog
@@ -494,25 +633,33 @@ showAlertDialog(BuildContext context, String title, String message) {
     },
   );
 }
-void _showDialog(BuildContext context, String Message) {
-  // flutter defined function
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      // return object of type Dialog
-      return AlertDialog(
-        title: new Text("Alert Dialog title"),
-        content: new Text(Message),
-        actions: <Widget>[
-          // usually buttons at the bottom of the dialog
-          new FlatButton(
-            child: new Text("Close"),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      );
-    },
-  );
+
+serialHandler(List<int> serialData) {
+  //parse and translate the incoming serial data
+  var message = utf8.decode(serialData);
+
+  //do something with each message
+  //might need a switch case for each type of message
+  //also need to decide which messages to send
+  //possibly store and use as metrics later on?
+  //send myoware sensor values to make a graph?
+  print(message);
+
+  if (message.contains("REP") && lastMessage != true) {
+    repCounter++;
+    lastMessage = true;
+  }
+  else{
+    receivedFlexValues.add(serialData[0]);
+    flexData.add(FlexData(i, receivedFlexValues[i]));
+    i++;
+    lastMessage = false;
+  }
+}
+
+class FlexData {
+  final int index;
+  final int flex;
+
+  FlexData(this.index, this.flex);
 }

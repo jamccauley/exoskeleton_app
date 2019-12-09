@@ -50,7 +50,7 @@ class BluetoothSetup {
   var message;
   BluetoothCharacteristic serialPort;
 
-  deviceScan() async{
+  deviceScan(BuildContext context) async{
     scanSubscription = null;
     scanSubscription = bluetooth.scan().listen((scanResult) {
       _device = scanResult.device;
@@ -58,6 +58,7 @@ class BluetoothSetup {
 
       if (_device.name == 'BlunoMega'){
         connect(_device);
+        showAlertDialog(context, "Device Connected", "Bluno Mega Found and Connected");
       }
     });
   }
@@ -336,6 +337,7 @@ class ExerciseState extends State<InProgress> {
                             if(blue._device != null){
                               setState(() {
                                 exerciseStarted = true;
+                                exerciseComplete = false;
                               });
                               if(pushedExercise.contains("Elbow")) {
                                 blue.sendData([101, 108, 98],context);
@@ -377,10 +379,6 @@ class ExerciseState extends State<InProgress> {
   void stopButton() {
     if (exerciseComplete == false) {
       Navigator.pushNamed(context, '/EndEarly');
-    } else {
-      //blue.sendData([115,116,111,112]);
-      Navigator.pop(context);
-      exerciseComplete = false;
     }
   }
   void backArrow () {
@@ -425,10 +423,6 @@ class ExerciseEndState extends State<EndEarly> {
                       repCounter = 0;
                       i = 0;
                       Navigator.pushNamed(context, '/Metrics');
-                      setState(() {
-                        exerciseComplete = true;
-                        exerciseStarted = false;
-                      });
                     },
                     child: Text(
                       "Yes",
@@ -465,14 +459,19 @@ class ExerciseEndState extends State<EndEarly> {
 class MetricsState extends State<Metrics> {
 
   @override
-  static var data = flexData;
+  static List<FlexData> getData() {
+    var data = flexData;
+    return data;
+  }
+
+  static var color = new charts.Color();
 
   static var series = [
     new charts.Series(
       domainFn: (FlexData chartData, _) => chartData.index,
       measureFn: (FlexData chartData, _) => chartData.flex,
       id: 'Flex Value',
-      data: data,
+      data: getData(),
     ),
   ];
 
@@ -495,9 +494,8 @@ class MetricsState extends State<Metrics> {
                   icon: Icon(Icons.arrow_back),
                   tooltip: "Back to home screen",
                   onPressed: () {
+                    clearData();
                     Navigator.pushNamed(context,'/');
-                    flexData = [];
-                    receivedFlexValues = [];
                   },
                   color: Colors.white,
                   iconSize: 40,
@@ -509,13 +507,28 @@ class MetricsState extends State<Metrics> {
               ],
             ),
           ),
-          Padding(
-            padding: EdgeInsets.all(12),
-            child: Container(
-              height: 400.0,
-              width: 400.0,
-              child: chart,
+          Row(
+          children: <Widget>[
+            RotatedBox(
+              quarterTurns: 3,
+              child: Text(
+                "Flex Value",
+                style: TextStyle(color: Colors.white,fontSize: 18),
+              ),
             ),
+            Padding(
+              padding: EdgeInsets.all(8),
+              child: Container(
+                height: 370.0,
+                width: 370.0,
+                child: chart,
+              ),
+            ),
+          ]
+          ),
+          Text(
+            "Recorded Flexes",
+            style: TextStyle(color: Colors.white,fontSize: 18),
           ),
           Divider(
             color: Colors.white,
@@ -523,6 +536,10 @@ class MetricsState extends State<Metrics> {
         ],
       ),
     );
+  }
+  void clearData() {
+    flexData.clear();
+    receivedFlexValues.clear();
   }
 }
 
@@ -569,7 +586,7 @@ class BluetoothState extends State<Bluetooth> {
                 style: TextStyle(fontSize: 31),
               ),
               onPressed: () {
-                blue.deviceScan();
+                blue.deviceScan(context);
                 setState(() {
                   blue.deviceConnected;
                 });
@@ -651,7 +668,7 @@ serialHandler(List<int> serialData) {
   }
   else{
     receivedFlexValues.add(serialData[0]);
-    flexData.add(FlexData(i, receivedFlexValues[i]));
+    flexData.add(FlexData(i, receivedFlexValues[i],Colors.deepOrangeAccent));
     i++;
     lastMessage = false;
   }
@@ -660,6 +677,9 @@ serialHandler(List<int> serialData) {
 class FlexData {
   final int index;
   final int flex;
+  final charts.Color color;
 
-  FlexData(this.index, this.flex);
+  FlexData(this.index, this.flex, Color color)
+      : this.color = new charts.Color(
+      r: color.red, g: color.green, b: color.blue, a: color.alpha);
 }
